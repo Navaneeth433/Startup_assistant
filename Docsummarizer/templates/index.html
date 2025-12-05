@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Document Summarizer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
+        <h1 class="text-2xl font-bold text-center mb-6 text-indigo-700">📜 Legal Document Summarizer</h1>
+
+        <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/summarize" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Upload your legal document (PDF, JPG, PNG):</label>
+                <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required
+                       class="block w-full text-sm border border-gray-300 rounded-lg cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none p-2">
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">
+                Summarize Document
+            </button>
+        </form>
+
+        <div id="loading" class="hidden text-center mt-6">
+            <p class="text-gray-500">⏳ Summarizing... please wait.</p>
+        </div>
+
+        <div id="result" class="mt-6 hidden">
+            <h2 class="text-lg font-semibold text-indigo-700 mb-2">Simplified Summary:</h2>
+            <p id="summaryText" class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm whitespace-pre-wrap"></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("uploadForm");
+        const loading = document.getElementById("loading");
+        const result = document.getElementById("result");
+        const summaryText = document.getElementById("summaryText");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            loading.classList.remove("hidden");
+            result.classList.add("hidden");
+            summaryText.textContent = "";
+
+            const formData = new FormData(form);
+            const response = await fetch("/summarize", { method: "POST", body: formData });
+            const data = await response.json();
+
+            loading.classList.add("hidden");
+            if (data.summary) {
+                summaryText.textContent = data.summary;
+                result.classList.remove("hidden");
+            } else {
+                summaryText.textContent = "❌ Error: " + (data.error || "Unknown error occurred.");
+                result.classList.remove("hidden");
+            }
+        });
+    </script>
+</body>
+</html>

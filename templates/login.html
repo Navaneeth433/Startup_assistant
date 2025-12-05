@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - AI Startup Legal Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="auth-container">
+    <div class="auth-card">
+      <h2>Login</h2>
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" required autocomplete="current-password">
+        </div>
+        <button type="submit">Login</button>
+      </form>
+      <p class="auth-switch">Don’t have an account? <a href="signup.html">Sign up</a></p>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = {
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value,
+      };
+
+      try {
+        const res = await fetch("http://localhost:5000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",   // ✅ include Flask session cookie
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          // ✅ keep using localStorage for dashboard compatibility
+          localStorage.setItem("user_id", result.user_id);
+          localStorage.setItem("user_email", data.email);
+          window.location.href = "dashboard.html";
+        } else {
+          alert(result.error);
+        }
+      } catch (err) {
+        alert("Error connecting to server");
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

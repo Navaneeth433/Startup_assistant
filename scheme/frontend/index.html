@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Startup Scheme Matcher</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Startup Scheme Matcher</h1>
+    <form id="schemeForm">
+      <label for="domain">Domain</label>
+      <select id="domain" name="domain" required>
+        <option value="tech">Tech</option>
+        <option value="biotech">Biotech</option>
+        <option value="agriculture">Agriculture</option>
+        <option value="manufacturing">Manufacturing</option>
+        <option value="services">Services</option>
+        <option value="education">Education</option>
+        <option value="social impact">Social Impact</option>
+      </select>
+
+      <label for="registration">Registration Type</label>
+      <select id="registration" name="registration" required>
+        <option value="private limited">Private Limited</option>
+        <option value="LLP">LLP</option>
+        <option value="MSME">MSME</option>
+        <option value="society">Society</option>
+        <option value="trust">Trust</option>
+      </select>
+
+      <label for="stage">Stage</label>
+      <select id="stage" name="stage" required>
+        <option value="early">Early Stage</option>
+        <option value="growth">Growth</option>
+        <option value="scaling">Scaling</option>
+      </select>
+
+      <button type="submit">Find Schemes</button>
+    </form>
+
+    <div id="results" class="results"></div>
+  </div>
+
+  <script>
+    document.getElementById("schemeForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const data = {
+        domain: document.getElementById("domain").value,
+        registration: document.getElementById("registration").value,
+        stage: document.getElementById("stage").value
+      };
+
+      const response = await fetch("http://127.0.0.1:5000/match_schemes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const schemes = await response.json();
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if (schemes.length === 0) {
+        resultsDiv.innerHTML = "<p>No schemes matched your profile.</p>";
+      } else {
+        schemes.forEach(scheme => {
+          const card = document.createElement("div");
+          card.classList.add("card");
+          card.innerHTML = `
+            <h3>${scheme.name}</h3>
+            <p><strong>Benefits:</strong> ${scheme.benefits}</p>
+            <a href="${scheme.link}" target="_blank">Apply Here</a>
+          `;
+          resultsDiv.appendChild(card);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

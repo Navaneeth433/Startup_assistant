@@ -1,0 +1,481 @@
+/*=============================================
+=            Global Styles & Variables        =
+=============================================*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #4F46E5;
+  --secondary-color: #7C3AED;
+  --dark-blue: #111827;
+  --slate-gray: #4B5563;
+  --light-gray: #F9FAFB;
+  --background-color: #FFFFFF;
+  --border-color: #E5E7EB;
+  --white: #FFFFFF;
+  --success: #10B981;
+
+  --border-radius-sm: 0.375rem; /* 6px */
+  --border-radius-md: 0.5rem;   /* 8px */
+  --border-radius-lg: 1rem;     /* 16px */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background-color);
+  color: var(--slate-gray);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/*=============================================
+=            Header & Navigation              =
+=============================================*/
+.header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 1rem 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.logo img {
+  width: 40px;
+  height: 40px;
+}
+
+.logo span {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dark-blue);
+}
+
+.main-nav a {
+  margin-left: 1.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--slate-gray);
+  transition: color 0.3s ease;
+}
+
+.main-nav a:hover {
+  color: var(--primary-color);
+}
+
+.btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  background-color: var(--light-gray);
+  color: var(--dark-blue);
+  border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+    background-color: var(--border-color);
+}
+
+
+/*=============================================
+=                 Hero Section                =
+=============================================*/
+.hero {
+  text-align: center;
+  padding: 6rem 0;
+  background: linear-gradient(180deg, var(--background-color) 0%, #F3F4F6 100%);
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-content h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--dark-blue);
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+.hero-content .subtitle {
+  font-size: 1.25rem;
+  color: var(--slate-gray);
+  margin-bottom: 2.5rem;
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-cta {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/*=============================================
+=            Features Section                 =
+=============================================*/
+.section {
+  padding: 6rem 0;
+}
+
+.section-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 4rem;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--dark-blue);
+  margin-bottom: 1rem;
+}
+
+.section-header p {
+  font-size: 1.125rem;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.feature-card {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 2.5rem 2rem;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background-color: #EEF2FF;
+  color: var(--primary-color);
+  border-radius: var(--border-radius-md);
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.feature-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dark-blue);
+  margin-bottom: 0.75rem;
+}
+
+/*=============================================
+=            How It Works Section             =
+=============================================*/
+.how-it-works {
+    background-color: var(--light-gray);
+}
+
+.steps-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    position: relative;
+    margin-top: 4rem;
+}
+
+/* Dashed line connector */
+.steps-container::before {
+    content: '';
+    position: absolute;
+    top: 32px;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background-image: linear-gradient(to right, var(--border-color) 50%, transparent 50%);
+    background-size: 16px 2px;
+    z-index: 0;
+}
+
+.step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.step-number {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--background-color);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.step h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--dark-blue);
+  margin-bottom: 0.5rem;
+}
+
+
+/*=============================================
+=               Footer                        =
+=============================================*/
+footer {
+  background-color: var(--dark-blue);
+  color: #9CA3AF;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+.footer-logo span {
+    color: var(--white);
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+}
+.footer-links a {
+    text-decoration: none;
+    color: #9CA3AF;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: var(--white);
+}
+
+.footer-socials {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 1.5rem;
+}
+
+.footer-copyright {
+    margin-top: 2rem;
+    border-top: 1px solid var(--slate-gray);
+    padding-top: 2rem;
+    width: 100%;
+}
+
+
+/*=============================================
+=       Authentication Pages (Login/Signup)   =
+=============================================*/
+.auth-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background-color: var(--light-gray);
+}
+
+.auth-card {
+  background: var(--background-color);
+  padding: 2.5rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 450px;
+}
+.auth-card-signup {
+    max-width: 700px;
+}
+
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--dark-blue);
+  font-size: 1.75rem;
+}
+
+.form-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--dark-blue);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+fieldset {
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.form-divider {
+    margin: 2rem 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--slate-gray);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.auth-card button[type="submit"] {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.auth-card button[type="submit"]:hover {
+    background-color: var(--secondary-color);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.auth-switch a {
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+
+/*=============================================
+=                 Responsive Design           =
+=============================================*/
+@media (max-width: 768px) {
+    .main-nav { display: none; } /* Simplification for this example. A real site would use a hamburger menu. */
+
+    .hero-content h1 { font-size: 2.5rem; }
+    .hero-content .subtitle { font-size: 1rem; }
+    .hero-cta { flex-direction: column; }
+    
+    .steps-container { flex-direction: column; }
+    .steps-container::before { display: none; }
+}

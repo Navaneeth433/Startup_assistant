@@ -1,0 +1,42 @@
+[
+  {
+    "name": "Startup India Seed Fund Scheme",
+    "eligibility": {
+      "domain": ["tech", "biotech", "agriculture"],
+      "registration": ["private limited", "LLP"],
+      "stage": ["early"]
+    },
+    "benefits": "Up to INR 50 lakhs for prototype development, product trials, and market entry.",
+    "link": "https://www.startupindia.gov.in/"
+  },
+  {
+    "name": "MSME Innovation Scheme",
+    "eligibility": {
+      "domain": ["manufacturing", "services"],
+      "registration": ["MSME", "private limited"],
+      "stage": ["growth", "scaling"]
+    },
+    "benefits": "Provides R&D grants, design support, and marketing assistance.",
+    "link": "https://msme.gov.in/"
+  },
+  {
+    "name": "Atal Innovation Mission",
+    "eligibility": {
+      "domain": ["tech", "education", "social impact"],
+      "registration": ["private limited", "society", "trust"],
+      "stage": ["early", "growth"]
+    },
+    "benefits": "Innovation labs, incubation centers, and mentorship support for startups.",
+    "link": "https://aim.gov.in/"
+  },
+  {
+    "name": "SIDBI Fund of Funds",
+    "eligibility": {
+      "domain": ["all"],
+      "registration": ["private limited", "LLP"],
+      "stage": ["growth", "scaling"]
+    },
+    "benefits": "Funding support through venture capital funds managed by SIDBI.",
+    "link": "https://www.sidbi.in/"
+  }
+]

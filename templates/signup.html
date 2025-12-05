@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup - AI Startup Legal Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="auth-container">
+    <div class="auth-card">
+      <h2>Create Your Startup Profile</h2>
+      <form id="signupForm" novalidate>
+        
+        <fieldset>
+          <legend class="form-section-title">User Credentials</legend>
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" placeholder="Your name" required autocomplete="name">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Choose a strong password" required autocomplete="new-password">
+          </div>
+        </fieldset>
+
+        <hr class="form-divider">
+
+        <fieldset>
+          <legend class="form-section-title">Startup Details</legend>
+          <div class="form-group">
+            <label for="startup_name">Startup Name</label>
+            <input type="text" id="startup_name" placeholder="Enter your startup name" required>
+          </div>
+          <div class="form-group">
+            <label for="domain">Domain</label>
+            <select id="domain" required>
+              <option value="" disabled selected>Select a domain</option>
+              <option value="tech">Technology</option>
+              <option value="biotech">Biotech</option>
+              <option value="agriculture">Agriculture</option>
+              <option value="fintech">Fintech</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="services">Services</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="registration">Registration Type</label>
+            <select id="registration" required>
+              <option value="" disabled selected>Select registration type</option>
+              <option value="private limited">Private Limited</option>
+              <option value="LLP">LLP</option>
+              <option value="partnership">Partnership</option>
+              <option value="sole proprietorship">Sole Proprietorship</option>
+              <option value="MSME">MSME</option>
+              <option value="unregistered">Unregistered</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stage">Stage</label>
+            <select id="stage" required>
+              <option value="" disabled selected>Select current stage</option>
+              <option value="idea">Idea Stage</option>
+              <option value="early">Early Stage</option>
+              <option value="growth">Growth</option>
+              <option value="scaling">Scaling</option>
+              <option value="mature">Mature</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="funding">Funding Amount (in Lakhs)</label>
+            <input type="number" id="funding" placeholder="e.g. 50" required min="0">
+          </div>
+          <div class="form-group">
+            <label for="team_size">Team Size</label>
+            <input type="number" id="team_size" placeholder="e.g. 10" required min="1">
+          </div>
+          <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" placeholder="City, State" required autocomplete="address-level2, address-level1">
+          </div>
+          <div class="form-group">
+            <label for="website">Website (optional)</label>
+            <input type="url" id="website" placeholder="https://yourstartup.com" autocomplete="url">
+          </div>
+          <div class="form-group">
+            <label for="problem">Problem Statement</label>
+            <textarea id="problem" placeholder="What problem is your startup solving?" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="vision">Vision / Mission</label>
+            <textarea id="vision" placeholder="Your startup's vision & mission" rows="3" required></textarea>
+          </div>
+        </fieldset>
+
+        <button type="submit">Sign Up</button>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="login.html">Login</a></p>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = {
+        full_name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value,
+        startup_name: document.getElementById("startup_name").value,
+        domain: document.getElementById("domain").value,
+        registration_type: document.getElementById("registration").value,
+        stage: document.getElementById("stage").value,
+        funding_amount: document.getElementById("funding").value,
+        team_size: document.getElementById("team_size").value,
+        location: document.getElementById("location").value,
+        website: document.getElementById("website").value,
+        problem_statement: document.getElementById("problem").value,
+        vision: document.getElementById("vision").value,
+      };
+
+      try {
+        const res = await fetch("http://localhost:5000/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        alert(result.message || result.error);
+
+        if (res.ok) {
+          window.location.href = "login.html";
+        }
+      } catch (err) {
+        alert("Error connecting to server");
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

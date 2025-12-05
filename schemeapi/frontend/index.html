@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Startup Scheme Matcher</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f9f9f9; }
+    h1 { text-align: center; }
+    .form-container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    select, button { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { background: #007bff; color: white; font-size: 16px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .results { margin-top: 30px; }
+    .scheme { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .scheme a { text-decoration: none; color: #007bff; }
+  </style>
+</head>
+<body>
+  <h1>Startup Scheme Matcher</h1>
+  <div class="form-container">
+    <label for="domain">Domain</label>
+    <select id="domain">
+      <option value="any">Any</option>
+      <option value="agriculture">Agriculture</option>
+      <option value="biotech">Biotech</option>
+      <option value="tech">Tech</option>
+      <option value="manufacturing">Manufacturing</option>
+      <option value="services">Services</option>
+      <option value="education">Education</option>
+      <option value="social impact">Social Impact</option>
+    </select>
+
+    <label for="registration">Registration</label>
+    <select id="registration">
+      <option value="any">Any</option>
+      <option value="private limited">Private Limited</option>
+      <option value="LLP">LLP</option>
+      <option value="MSME">MSME</option>
+      <option value="society">Society</option>
+      <option value="trust">Trust</option>
+    </select>
+
+    <label for="stage">Stage</label>
+    <select id="stage">
+      <option value="any">Any</option>
+      <option value="early">Early</option>
+      <option value="growth">Growth</option>
+      <option value="scaling">Scaling</option>
+    </select>
+
+    <button onclick="findSchemes()">Find Matching Schemes</button>
+  </div>
+
+  <div class="results" id="results"></div>
+
+  <script>
+    async function findSchemes() {
+      const domain = document.getElementById("domain").value;
+      const registration = document.getElementById("registration").value;
+      const stage = document.getElementById("stage").value;
+
+      const response = await fetch("/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ domain, registration, stage })
+      });
+
+      const data = await response.json();
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      if (data.length === 0) {
+        resultsDiv.innerHTML = "<p>No matching schemes found.</p>";
+        return;
+      }
+
+      data.forEach(scheme => {
+        const div = document.createElement("div");
+        div.className = "scheme";
+        div.innerHTML = `
+          <h3>${scheme.name}</h3>
+          <p><strong>Benefits:</strong> ${scheme.benefits}</p>
+          <p><a href="${scheme.link}" target="_blank">Apply Here</a></p>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

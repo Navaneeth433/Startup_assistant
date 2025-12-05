@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Automated Document Generator</title>
+</head>
+<body>
+  <h1>Generate Startup Documents</h1>
+  <form action="/generate" method="post">
+    <label>User ID:</label>
+    <input type="text" name="user_id" required><br><br>
+
+    <label>Document Type:</label>
+    <select name="doc_type" required>
+      <option value="nda">NDA</option>
+      <option value="pitch_deck">Pitch Deck</option>
+      <option value="mou">MoU</option>
+      <option value="rti">RTI Draft</option>
+    </select><br><br>
+
+    <label>Other Party / Partner / Authority:</label>
+    <input type="text" name="other_party" placeholder="For NDA / MoU / RTI"><br><br>
+
+    <label>Subject / Purpose:</label>
+    <input type="text" name="subject" placeholder="Purpose or Subject"><br><br>
+
+    <button type="submit">Generate Document</button>
+  </form>
+</body>
+</html>
