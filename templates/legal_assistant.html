@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Legal Assistant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+  <div class="w-full max-w-3xl bg-white rounded-2xl shadow-md p-6 mt-6">
+    <h1 class="text-2xl font-bold text-indigo-700 mb-4 flex items-center gap-2">
+      ⚖️ AI Legal Assistant (RAG)
+    </h1>
+    <p class="text-sm text-gray-600 mb-4">
+      Ask questions about startup laws / compliance. The answer is generated using your legal_docs database as context.
+    </p>
+
+    <div class="space-y-3">
+      <textarea id="query" rows="4"
+        class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        placeholder="e.g., What are the compliance requirements for a private limited startup in India?"></textarea>
+
+      <button id="askBtn"
+        class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition">
+        Ask AI
+      </button>
+    </div>
+
+    <div id="loading" class="hidden mt-4 text-gray-500 text-sm">
+      ⏳ Thinking... fetching relevant sections and generating answer.
+    </div>
+
+    <div id="answerBlock" class="mt-6 hidden">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-2">Answer</h2>
+      <div id="answerText" class="text-sm bg-gray-50 border border-gray-200 rounded-lg p-4 whitespace-pre-wrap"></div>
+    </div>
+
+    <div id="contextsBlock" class="mt-6 hidden">
+      <h2 class="text-lg font-semibold text-gray-800 mb-2">Top Matching Sections</h2>
+      <div id="contextsList" class="space-y-3 text-sm"></div>
+    </div>
+  </div>
+
+  <script>
+  const askBtn = document.getElementById("askBtn");
+  const queryInput = document.getElementById("query");
+  const loading = document.getElementById("loading");
+  const answerBlock = document.getElementById("answerBlock");
+  const answerText = document.getElementById("answerText");
+  const contextsBlock = document.getElementById("contextsBlock");
+  const contextsList = document.getElementById("contextsList");
+
+  askBtn.addEventListener("click", async () => {
+    const query = queryInput.value.trim();
+    if (!query) {
+      alert("Please enter a question.");
+      return;
+    }
+
+    loading.classList.remove("hidden");
+    answerBlock.classList.add("hidden");
+    contextsBlock.classList.add("hidden");
+    answerText.textContent = "";
+    contextsList.innerHTML = "";
+
+    try {
+      const res = await fetch("/api/rag/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await res.json();
+
+      loading.classList.add("hidden");
+
+      if (!res.ok) {
+        answerText.textContent = "❌ Error: " + (data.error || "Unknown error");
+        answerBlock.classList.remove("hidden");
+        return;
+      }
+
+      // Show the label (currently "Top matching sections")
+      answerText.textContent = data.answer || "Top matching sections";
+      answerBlock.classList.remove("hidden");
+
+      // Show the top matching sections underneath
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        data.results.forEach(r => {
+          const div = document.createElement("div");
+          div.className = "bg-white border border-gray-200 rounded-lg p-3";
+          div.innerHTML = `
+            <div class="text-xs text-gray-500 mb-1">
+              Doc ID: ${r.doc_id} • Section: ${r.section}
+            </div>
+            <div class="text-sm text-gray-800 whitespace-pre-wrap">
+              ${r.content}
+            </div>
+          `;
+          contextsList.appendChild(div);
+        });
+        contextsBlock.classList.remove("hidden");
+      } else {
+        contextsList.innerHTML = "<p class='text-sm text-gray-500'>No matching sections found.</p>";
+        contextsBlock.classList.remove("hidden");
+      }
+
+    } catch (err) {
+      console.error(err);
+      loading.classList.add("hidden");
+      answerText.textContent = "❌ Error: " + err.message;
+      answerBlock.classList.remove("hidden");
+    }
+  });
+</script>
+</body>
+</html>
