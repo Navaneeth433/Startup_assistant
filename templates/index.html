@@ -3,164 +3,226 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NOVAUX - AI Startup Legal Assistant</title>
-  
-  <meta name="description" content="NOVAUX helps startups navigate legal compliance, regulatory interpretation, and strategic planning with an AI-driven legal assistant.">
-  <link rel="icon" href="/logo.png"> <link rel="stylesheet" href="styles2.css">
+  <title>AI Startup Legal Assistant</title>
+  <link rel="icon" href="https://cdn.example.com/favicon.ico">
+  <link rel="apple-touch-icon" sizes="192x192" href="https://cdn.example.com/logo192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="https://cdn.example.com/logo512.png">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NOVAUX">
+
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+  <style>
+    /* Your original CSS remains unchanged */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Open Sans', sans-serif; background: #fff; color: #333; line-height: 1.6; }
+    a { text-decoration: none; color: inherit; }
+    img { max-width: 100%; display: block; height: auto; }
+    button { cursor: pointer; border: none; font-family: inherit; }
+
+    :root {
+      --primary-color: #4F46E5;
+      --secondary-color: #7C3AED;
+      --light-gray: #f9fafb;
+      --text-color: #555;
+      --border-radius-md: 8px;
+      --border-radius-lg: 16px;
+    }
+
+    .container { 
+      width: 90%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #fff;
+    }
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height:72px;
+      padding: 0px 32px;
+      background: #fff;
+      border-radius: var(--border-radius-lg);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      margin: 12px 0;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .logo span {
+      color: var(--primary-color);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    nav a { margin-left: 24px; font-weight: 600; transition: color 0.2s; }
+    nav a:hover { color: var(--secondary-color); }
+    .btn-login, .btn-logout {
+      background: var(--primary-color); 
+      color: #fff; 
+      padding: 10px 20px;
+      border-radius: var(--border-radius-md); 
+      font-weight: 600; 
+      transition: background 0.3s;
+      margin-left: 16px;
+    }
+    .btn-login:hover, .btn-logout:hover { background: var(--secondary-color); }
+
+    .hero { display: flex; flex-direction: column-reverse; align-items: center; padding: 80px 0; gap: 40px; }
+    .hero-content { text-align: center; max-width: 600px; }
+    .hero-content h2 { font-size: 2.5rem; font-weight: 700; margin-bottom: 20px; }
+    .hero-content p { font-size: 1.125rem; color: var(--text-color); margin-bottom: 20px; }
+    .hero img { border-radius: var(--border-radius-lg); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+    @media(min-width: 768px) {
+      .hero { flex-direction: row; text-align: left; justify-content: space-between; }
+      .hero-content { text-align: left; }
+    }
+
+    .features { padding: 80px 0; background: var(--light-gray); }
+    .features h3 { text-align: center; font-size: 2rem; font-weight: 700; margin-bottom: 16px; }
+    .features p { text-align: center; max-width: 700px; margin: 0 auto 40px; color: var(--text-color); }
+    .feature-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 32px; }
+    .feature-card { background: #fff; border-radius: var(--border-radius-lg); padding: 32px; width: 280px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s; }
+    .feature-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    .feature-icon { width: 48px; height: 48px; background: #EEF2FF; display: flex; align-items: center; justify-content: center; border-radius: 12px; margin: 0 auto 16px; color: var(--primary-color); font-size: 24px; }
+    .feature-card h4 { font-size: 1.25rem; font-weight: 600; margin-bottom: 12px; }
+    .feature-card p { color: var(--text-color); font-size: 1rem; }
+
+    footer { background: #f3f4f6; padding: 40px 20px; text-align: center; font-size: 0.875rem; color: var(--text-color); }
+  </style>
 </head>
 <body>
 
-<header class="header">
+<header>
   <div class="container">
     <div class="nav-container">
-      <a href="/" aria-label="NOVAUX Home" class="logo">
-        <img src="logo.png" alt="NOVAUX Logo">
-        <span>NOVAUX</span>
-      </a>
-      <nav class="main-nav">
-        <a href="#features">Features</a>
-        <a href="#how-it-works">How It Works</a>
-      </nav>
-      <div id="auth-buttons">
-        <a href="login.html" class="btn btn-secondary">Login</a>
-        <a href="signup.html" class="btn btn-primary">Sign Up</a>
+      <div class="logo">
+        <img src="static/logo.png" alt="NOVAUX Logo">
+        <span><a href="/" aria-label="AI Startup Legal Assistant Home">NOVAUX</a></span>
       </div>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#usecases">Use Cases</a>
+        <a href="#resources">Resources</a>
+        <!-- Auth buttons -->
+        <span id="auth-buttons">
+          <a href="login.html" class="btn-login">Login</a>
+        </span>
+      </nav>
     </div>
   </div>
 </header>
 
 <main>
-  <section class="hero">
-    <div class="container hero-content fade-in-up">
-      <h1>Your AI-Powered Co-Pilot for Startup Legalities</h1>
-      <p class="subtitle">Navigate legal compliance, interpret regulations, and generate essential documents with our intelligent, text-based legal assistant. Focus on growing your business, we'll handle the complexities.</p>
-      <div class="hero-cta">
-        <a href="signup.html" class="btn btn-primary">Get Started for Free</a>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-content">
+        <h2>Simplify Legal Compliance & Strategic Decisions</h2>
+        <p>Our AI-driven assistant integrates large language models, semantic document retrieval, and predictive analytics to help startups navigate legal compliance, regulatory interpretation, and strategic planning efficiently.</p>
+        <p>Enhance operational efficiency by matching personalized schemes and generating essential legal documents through a unified, text-based interface.</p>
       </div>
-    </div>
-  </section>
+      <img src="static/image.png" alt="A scientist working with robotic equipment in a modern lab, representing AI and technology." loading="lazy" width="400" height="300">
+    </section>
+  </div>
 
-  <section id="features" class="section">
+  <section id="features" class="features">
     <div class="container">
-      <div class="section-header fade-in-up">
-        <h2>Built for the Ambitious Startup</h2>
-        <p>Powerful capabilities designed to streamline legal processes and improve operational efficiency from day one.</p>
-      </div>
-      <div class="feature-grid">
-        <div class="feature-card fade-in-up">
-          <div class="feature-icon"><span class="material-symbols-outlined">search</span></div>
-          <h3>Semantic Document Retrieval</h3>
-          <p>Instantly find the exact clause or regulation you need from vast legal libraries.</p>
-        </div>
-        <div class="feature-card fade-in-up" style="animation-delay: 0.1s;">
+      <h3>Key Features</h3>
+      <p>Powerful capabilities designed for startups to streamline legal and regulatory processes while improving operational efficiency.</p>
+      <a href="legal_assistant.html" > 
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon"><span class="material-symbols-outlined">description</span></div>
+            <h4>Semantic Document Retrieval</h4>
+            <p>Instantly search and retrieve relevant legal and     regulatory documents.</p>
+          </div>
+        </a>
+        <div class="feature-card">
           <div class="feature-icon"><span class="material-symbols-outlined">analytics</span></div>
-          <h3>Predictive Analytics</h3>
-          <p>Analyze potential legal risks and strategic opportunities with AI-driven insights.</p>
+          <h4>Predictive Analytics</h4>
+          <p>Analyze potential legal risks and strategic opportunities with AI insights.</p>
         </div>
-        <div class="feature-card fade-in-up" style="animation-delay: 0.2s;">
-          <div class="feature-icon"><span class="material-symbols-outlined">task_alt</span></div>
-          <h3>Personalized Scheme Matching</h3>
-          <p>Discover and match with applicable government schemes and incentives automatically.</p>
-        </div>
-        <div class="feature-card fade-in-up" style="animation-delay: 0.3s;">
+        <a href="scheme_matcher.html" > 
+          <div class="feature-card">
+            <div class="feature-icon"><span class="material-symbols-outlined">task_alt</span></div>
+            <h4>Personalized Scheme Matching</h4>
+            <p>Match startups with applicable government schemes and incentives.</p>
+          </div>
+        </a>
+        <a href="doc_summarizer.html" > 
+          <div class="feature-card">
+            <div class="feature-icon"><span class="material-symbols-outlined">task_alt</span></div>
+            <h4>Document Summarizer</h4>
+            <p>Summarize Your legal documents using LLM</p>
+          </div>
+        </a>
+        <div class="feature-card">
           <div class="feature-icon"><span class="material-symbols-outlined">article</span></div>
-          <h3>Automated Document Generation</h3>
-          <p>Generate essential legal documents like NDAs and employment contracts quickly.</p>
+          <h4>Automated Document Generation</h4>
+          <p>Generate essential legal documents quickly via a text-based interface.</p>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="how-it-works" class="section how-it-works">
-    <div class="container">
-      <div class="section-header fade-in-up">
-        <h2>Get Started in Minutes</h2>
-        <p>A simple, straightforward process to get you compliant and focused on your goals.</p>
-      </div>
-      <div class="steps-container">
-        <div class="step fade-in-up">
-          <div class="step-number">1</div>
-          <h3>Create Your Profile</h3>
-          <p>Sign up and tell us about your startup—your industry, stage, and unique needs.</p>
-        </div>
-        <div class="step fade-in-up" style="animation-delay: 0.2s;">
-          <div class="step-number">2</div>
-          <h3>Interact with AI</h3>
-          <p>Use our simple text-based interface to ask legal questions and request documents.</p>
-        </div>
-        <div class="step fade-in-up" style="animation-delay: 0.4s;">
-          <div class="step-number">3</div>
-          <h3>Receive Insights</h3>
-          <p>Get AI-powered analysis, document drafts, and compliance checklists instantly.</p>
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-symbols-outlined">smart_toy</span></div>
+          <h4>AI-Powered Insights</h4>
+          <p>Leverage LLM-driven analysis to make informed decisions with confidence.</p>
         </div>
       </div>
     </div>
   </section>
 </main>
 
-<footer>
-    <div class="container">
-        <div class="footer-content">
-            <a href="/" aria-label="NOVAUX Home" class="logo footer-logo">
-                <img src="logo.png" alt="NOVAUX Logo">
-                <span>NOVAUX</span>
-            </a>
-            <div class="footer-links">
-                <a href="#features">Features</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
-            </div>
-            <div class="footer-socials">
-                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-            </div>
-            <div class="footer-copyright">
-                &copy; 2025 NOVAUX. All rights reserved.
-            </div>
-        </div>
-    </div>
-</footer>
-
-
 <script>
 async function checkSession() {
   try {
-    const res = await fetch("http://localhost:5000/current_user", { credentials: "include" });
-    if (!res.ok) throw new Error('Network response was not ok');
-    
+    const res = await fetch("/current_user", { credentials: "include" });
     const data = await res.json();
     const authButtons = document.getElementById("auth-buttons");
 
     if (data.logged_in) {
       authButtons.innerHTML = `
-        <a href="dashboard.html" class="btn btn-secondary">Dashboard</a>
-        <button id="logoutBtn" class="btn btn-primary">Logout</button>
+        <a href="dashboard.html" class="btn-login">Dashboard</a>
+        <button id="logoutBtn" class="btn-logout">Logout</button>
       `;
       document.getElementById("logoutBtn").addEventListener("click", async () => {
-        await fetch("http://localhost:5000/logout", { method: "POST", credentials: "include" });
+        await fetch("/logout", { method: "POST", credentials: "include" });
         window.location.href = "index.html";
       });
     } else {
-      authButtons.innerHTML = `
-        <a href="login.html" class="btn btn-secondary">Login</a>
-        <a href="signup.html" class="btn btn-primary">Sign Up</a>
-      `;
+      authButtons.innerHTML = `<a href="login.html" class="btn-login">Login</a>`;
     }
   } catch (err) {
     console.error("Session check failed:", err);
-    // Fallback in case of server error
-    document.getElementById("auth-buttons").innerHTML = `
-        <a href="login.html" class="btn btn-secondary">Login</a>
-        <a href="signup.html" class="btn btn-primary">Sign Up</a>
-      `;
   }
 }
+checkSession();
 
-// Run the session check when the page loads
-document.addEventListener("DOMContentLoaded", checkSession);
 </script>
+
+<footer>
+  <div class="container">
+    &copy; 2025 AI Startup Legal Assistant. All rights reserved.
+  </div>
+</footer>
 
 </body>
 </html>
