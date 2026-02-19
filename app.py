@@ -1,11 +1,21 @@
 import os
+import re
 import logging
 import tempfile
-
-from flask import Flask, request, jsonify, session, render_template, send_from_directory
+import json
+import numpy as np
+from mistralai import Mistral
+from flask import Flask, request, jsonify, session, render_template, send_from_directory,send_file
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
+from DocsGenerator.generator import (
+    generate_nda,
+    generate_pitch_deck,
+    generate_mou,
+    generate_rti
+)
+
 
 from models import db, User, Startup
 from matcher import load_schemes, match_schemes
@@ -19,11 +29,21 @@ import ollama
 # --- NEW: imports for RAG (semantic search over legal_docs) ---
 import numpy as np
 import psycopg2
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, CrossEncoder
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+# --- OPTIONAL: Mistral API (Cloud LLM) ---
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
+
+mistral_client = None
+if MISTRAL_API_KEY:
+    mistral_client = Mistral(api_key=MISTRAL_API_KEY)
+    logger.info("✅ Mistral API enabled (cloud)")
+else:
+    logger.info("⚠️ MISTRAL_API_KEY not set → using Ollama (local)")
+
 
 # --- App Initialization ---
 app = Flask(__name__, template_folder="templates", static_folder="static")
@@ -68,9 +88,22 @@ def extract_text_from_file(file_path, file_ext):
 
 # --- NEW: RAG initialization (semantic search over legal_docs) ---
 # SentenceTransformer model for embeddings
-rag_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+# ---------------- RAG v2 INITIALIZATION ---------------- #
 
-# Direct psycopg2 connection for the legal_docs table
+
+
+EMBED_MODEL = "BAAI/bge-base-en-v1.5"
+RERANK_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+TOP_K_RETRIEVE = 50
+TOP_K_FINAL = 5
+
+print("Loading embedding model...")
+embedder = SentenceTransformer(EMBED_MODEL)
+
+print("Loading reranker...")
+reranker = CrossEncoder(RERANK_MODEL)
+
 rag_conn = psycopg2.connect(
     host="localhost",
     database="startup_assistant",
@@ -79,50 +112,210 @@ rag_conn = psycopg2.connect(
     port="5432",
 )
 rag_cur = rag_conn.cursor()
+from hybrid_retriever import hybrid_retrieve
 
+def retrieve(query):
+    results = hybrid_retrieve(query, top_k=50)
 
-def cosine_similarity(a, b):
-    """Safely compute cosine similarity between two vectors."""
-    a = np.array(a, dtype=float)
-    b = np.array(b, dtype=float)
-    denom = (np.linalg.norm(a) * np.linalg.norm(b)) + 1e-8
-    if denom == 0:
-        return 0.0
-    return float(np.dot(a, b) / denom)
+    docs = [
+        (
+            r.get("chunk_id"),
+            r["act"],
+            r["section"],
+            r["content"]
+        )
+        for r in results
+    ]
 
+    return docs
+ # ✅ RETURN docs, not fetchall() again
 
-def rag_search(query, top_k=5):
-    """
-    Return top_k matching sections from legal_docs for a given query.
-    Each result includes doc_id, section, truncated content, and similarity score.
-    """
-    q_emb = rag_model.encode(query)
+def rerank(query, docs):
+    pairs = [(query, doc[3]) for doc in docs]
+    scores = reranker.predict(pairs)
 
-    # Fetch candidate docs from DB
-    rag_cur.execute("SELECT id, section, content, embedding FROM legal_docs")
-    rows = rag_cur.fetchall()
-
-    scored = []
-    for r in rows:
-        # r[3] should be the embedding stored in Postgres (array / list of floats)
-        emb = np.array(r[3], dtype=float)
-        score = cosine_similarity(q_emb, emb)
-        scored.append((score, r))
-
+    scored = list(zip(scores, docs))
     scored.sort(reverse=True, key=lambda x: x[0])
-    top = scored[:top_k]
 
-    results = []
-    for score, row in top:
-        doc_id, section, content, _ = row
-        results.append({
-            "score": score,
-            "doc_id": doc_id,
-            "section": section,
-            "content": content[:500]  # truncate for response
-        })
-    return results
+    return [doc for score, doc in scored[:TOP_K_FINAL]]
+def rag_answer_with_llm(query):
+    retrieved = retrieve(query)
 
+    if not retrieved:
+        return "I could not find relevant legal information in the database.", [], None
+
+    top_docs = rerank(query, retrieved)
+
+    context = ""
+    for doc in top_docs:
+        trimmed = doc[3][:800]  # truncate long sections
+        context += f"""
+Act: {doc[1]}
+Section: {doc[2]}
+
+{trimmed}
+"""
+
+
+    # -------- Draft Generation --------
+    draft_prompt = f"""
+You are a legal assistant for startups in India.
+
+Rules:
+- Answer directly and concisely.
+- Use ONLY the provided context.
+- Do NOT invent information.
+- Cite sections clearly: [Source: Section <number>]
+
+Question:
+{query}
+
+Context:
+{context}
+
+Answer:
+"""
+
+    draft_response = mistral_client.chat.complete(
+    model="mistral-small-latest",
+    messages=[
+        {"role": "system", "content": "You are a legal assistant for startups in India."},
+        {"role": "user", "content": draft_prompt}
+    ]
+)
+
+
+    draft_answer = draft_response.choices[0].message.content.strip()
+
+    # -------- Evaluation --------
+    evaluation = evaluate_answer_with_mistral(
+        query,
+        context,
+        draft_answer
+    )
+
+    final_answer = draft_answer
+
+
+    sources = [
+        {
+            "act": doc[1],
+            "section": doc[2],
+            "content": doc[3] 
+        }
+        for doc in top_docs
+    ]
+
+    return final_answer, sources, evaluation
+
+
+def call_llm(messages, model="mistral-small-latest"):
+    """
+    Unified LLM caller:
+    - Uses Mistral API if available
+    - Falls back to Ollama if not
+    """
+
+    # ✅ Cloud LLM
+    if mistral_client:
+        response = mistral_client.chat.complete(
+            model=model,
+            messages=messages
+        )
+        return response.choices[0].message.content.strip()
+
+    # ✅ Local fallback (existing behavior)
+    response = ollama.chat(
+        model="mistral",
+        messages=messages
+    )
+    return response["message"]["content"].strip()
+
+def evaluate_answer_with_mistral(query, context, draft_answer):
+    evaluation_prompt = f"""
+You are a strict legal evaluator for Indian startup law.
+
+Evaluate the answer based on:
+
+1. Grounding: Is every statement supported by the context?
+2. Relevance: Does it directly answer the question?
+3. Conciseness: Is it precise and not overly verbose?
+4. Legal correctness: Is the interpretation accurate?
+
+Return JSON ONLY in this format:
+
+{{
+  "score": <number between 1 and 10>,
+  "hallucination": true/false,
+  "needs_refinement": true/false,
+  "reason": "brief explanation"
+}}
+
+Question:
+{query}
+
+Context:
+{context}
+
+Answer:
+{draft_answer}
+"""
+
+    response = mistral_client.chat.complete(
+        model="mistral-small-latest",
+        messages=[
+            {"role": "system", "content": "You are a strict legal evaluator."},
+            {"role": "user", "content": evaluation_prompt}
+        ]
+    )
+
+    try:
+        result = json.loads(response.choices[0].message.content)
+    except Exception:
+        return {
+            "score": 5,
+            "hallucination": True,
+            "needs_refinement": True,
+            "reason": "Evaluator formatting error"
+        }
+
+    return result
+
+
+def refine_answer_with_mistral(query, context, draft_answer):
+    refinement_prompt = f"""
+You are refining a legal answer for Indian startup law.
+
+Fix the answer by:
+- Removing unsupported or hallucinated claims
+- Making it concise and precise
+- Ensuring it directly answers the question
+- Ensuring citations follow this format:
+  [Source: Section <number>]
+
+Return ONLY the final improved answer.
+
+Question:
+{query}
+
+Context:
+{context}
+
+Original Answer:
+{draft_answer}
+
+Final Answer:
+"""
+
+    response = mistral_client.chat.complete(
+        model="mistral-small-latest",
+        messages=[
+            {"role": "system", "content": "You refine legal answers."},
+            {"role": "user", "content": refinement_prompt}
+        ]
+    )
+
+    return response.choices[0].message.content.strip()
 
 # Load schemes once at startup (ensure path correct)
 SCHEMES_FILE = os.path.join(os.path.dirname(__file__), "startup_schemes_final.json")
@@ -394,17 +587,17 @@ def summarize():
 
     # Summarize using Mistral via Ollama
     try:
-        response = ollama.chat(
-            model="mistral",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a legal assistant. Summarize the given legal text clearly and concisely."
-                },
-                {"role": "user", "content": text}
-            ]
-        )
-        summary = response['message']['content']
+        summary = call_llm(
+    messages=[
+        {
+            "role": "system",
+            "content": "You are a legal assistant. Summarize the given legal text clearly and concisely."
+        },
+        {"role": "user", "content": text}
+    ],
+    model="mistral-small-latest"
+)
+
     except Exception as e:
         logger.exception("Error contacting Ollama for summarization")
         summary = f"❌ Error contacting Ollama: {e}"
@@ -419,29 +612,40 @@ def summarize():
 @app.route("/ask", methods=["POST"])
 @app.route("/api/rag/ask", methods=["POST"])
 def ask_rag():
-    """
-    Simple RAG endpoint:
-    - Input: JSON { "query": "..." }
-    - Output: top matching sections from legal_docs
-    """
     data = request.get_json() or {}
     query = (data.get("query") or "").strip()
 
     if not query:
         return jsonify({"error": "Query is required"}), 400
 
-    results = rag_search(query, top_k=5)
+    retrieved = retrieve(query)
+    top_docs = rerank(query, retrieved)
 
     return jsonify({
-        "answer": "Top matching sections",
         "results": [
             {
-                "doc_id": r["doc_id"],
-                "section": r["section"],
-                "content": r["content"]
+                "act": doc[1],
+                "section": doc[2],
+                "content": doc[3][:600]
             }
-            for r in results
+            for doc in top_docs
         ]
+    })
+@app.route("/api/rag/qa", methods=["POST"])
+def rag_qa():
+    data = request.get_json() or {}
+    query = (data.get("query") or "").strip()
+
+    if not query:
+        return jsonify({"error": "Query is required"}), 400
+
+    answer, sources, evaluation = rag_answer_with_llm(query)
+
+    return jsonify({
+        "query": query,
+        "answer": answer,
+        "sources": sources,
+        "evaluation": evaluation
     })
 
 @app.route("/legal-assistant")
@@ -454,6 +658,83 @@ def legal_assistant_page():
 def legal_assistant_html_alias():
     # support direct /legal_assistant.html
     return render_template("legal_assistant.html")
+@app.route("/documents")
+def documents_page():
+    # UI page
+    return render_template("documents.html")
+@app.route("/api/documents/generate", methods=["POST"])
+def generate_document():
+    try:
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        data = request.get_json() or {}
+        doc_type = data.get("doc_type")
+
+        user = db.session.get(User, user_id)
+        startup = Startup.query.filter_by(user_id=user_id).first()
+
+        if not user or not startup:
+            return jsonify({"error": "User or startup not found"}), 404
+
+        if doc_type == "nda":
+            file_path = generate_nda(
+                call_llm,
+                user,
+                startup,
+                data.get("other_party"),
+                data.get("purpose")
+            )
+
+        elif doc_type == "mou":
+            file_path = generate_mou(
+                call_llm,
+                user,
+                startup,
+                data.get("partner_name"),
+                data.get("purpose")
+            )
+
+        elif doc_type == "rti":
+            file_path = generate_rti(
+                call_llm,
+                user,
+                startup,
+                data.get("authority"),
+                data.get("subject"),
+                data.get("purpose")
+            )
+
+        elif doc_type == "pitch_deck":
+            file_path = generate_pitch_deck(call_llm, user, startup)
+
+        else:
+            return jsonify({"error": "Invalid document type"}), 400
+
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(file_path)
+
+        return send_file(file_path, as_attachment=True)
+
+    except Exception as e:
+        logger.exception("Document generation failed")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/documents.html")
+def documents_html_alias():
+    return render_template("documents.html")
+@app.route("/debug/sample")
+def sample_row():
+    rag_cur.execute("""
+        SELECT doc_id, act_name, section, LEFT(content, 300)
+        FROM legal_docs
+        LIMIT 5;
+    """)
+    rows = rag_cur.fetchall()
+    return jsonify(rows)
+
+
 
 
 if __name__ == "__main__":
