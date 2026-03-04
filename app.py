@@ -1,9 +1,12 @@
 import os
+import joblib
 import re
 import logging
 import tempfile
 import json
 import numpy as np
+import pandas as pd
+
 from mistralai import Mistral
 from flask import Flask, request, jsonify, session, render_template, send_from_directory,send_file
 from flask_cors import CORS
@@ -15,7 +18,12 @@ from DocsGenerator.generator import (
     generate_mou,
     generate_rti
 )
-
+from docx import Document
+from fpdf import FPDF
+from flask import send_from_directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+EXPORT_DIR = os.path.join(BASE_DIR, "generated_docs")
+os.makedirs(EXPORT_DIR, exist_ok=True)
 
 from models import db, User, Startup
 from matcher import load_schemes, match_schemes
@@ -61,6 +69,13 @@ db.init_app(app)
 # Create database tables if they don't exist
 with app.app_context():
     db.create_all()
+# --- Startup Success Predictor Model ---
+try:
+    startup_model = joblib.load("startup_xgb_model.pkl")
+    logger.info("✅ Startup predictor model loaded")
+except Exception as e:
+    logger.exception("❌ Failed to load startup predictor model")
+    startup_model = None
 
 # --- NEW: Tesseract path (adjust if installed elsewhere) ---
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -92,7 +107,7 @@ def extract_text_from_file(file_path, file_ext):
 
 
 
-EMBED_MODEL = "BAAI/bge-base-en-v1.5"
+EMBED_MODEL = "all-MiniLM-L6-v2"
 RERANK_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 TOP_K_RETRIEVE = 50
@@ -128,7 +143,7 @@ def retrieve(query):
     ]
 
     return docs
- # ✅ RETURN docs, not fetchall() again
+# ✅ RETURN docs, not fetchall() again
 
 def rerank(query, docs):
     pairs = [(query, doc[3]) for doc in docs]
@@ -245,10 +260,10 @@ Evaluate the answer based on:
 Return JSON ONLY in this format:
 
 {{
-  "score": <number between 1 and 10>,
-  "hallucination": true/false,
-  "needs_refinement": true/false,
-  "reason": "brief explanation"
+"score": <number between 1 and 10>,
+"hallucination": true/false,
+"needs_refinement": true/false,
+"reason": "brief explanation"
 }}
 
 Question:
@@ -291,7 +306,7 @@ Fix the answer by:
 - Making it concise and precise
 - Ensuring it directly answers the question
 - Ensuring citations follow this format:
-  [Source: Section <number>]
+[Source: Section <number>]
 
 Return ONLY the final improved answer.
 
@@ -418,7 +433,9 @@ def index():
 @app.route("/login.html")
 def login_html():
     return render_template("login.html")
-
+@app.route("/signup.html")
+def signup_html():
+    return render_template("signup.html")
 
 # Scheme matcher page (templates/scheme_matcher.html expected)
 @app.route("/scheme-matcher")
@@ -664,66 +681,117 @@ def documents_page():
     return render_template("documents.html")
 @app.route("/api/documents/generate", methods=["POST"])
 def generate_document():
-    try:
-        user_id = session.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Not logged in"}), 401
 
-        data = request.get_json() or {}
-        doc_type = data.get("doc_type")
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
 
-        user = db.session.get(User, user_id)
-        startup = Startup.query.filter_by(user_id=user_id).first()
+    data = request.get_json() or {}
+    doc_type = data.get("doc_type")
 
-        if not user or not startup:
-            return jsonify({"error": "User or startup not found"}), 404
+    if not doc_type:
+        return jsonify({"error": "Document type missing"}), 400
 
-        if doc_type == "nda":
-            file_path = generate_nda(
-                call_llm,
-                user,
-                startup,
-                data.get("other_party"),
-                data.get("purpose")
-            )
+    user = db.session.get(User, user_id)
+    startup = Startup.query.filter_by(user_id=user_id).first()
 
-        elif doc_type == "mou":
-            file_path = generate_mou(
-                call_llm,
-                user,
-                startup,
-                data.get("partner_name"),
-                data.get("purpose")
-            )
+    draft_text = None
+    file_path = None
 
-        elif doc_type == "rti":
-            file_path = generate_rti(
-                call_llm,
-                user,
-                startup,
-                data.get("authority"),
-                data.get("subject"),
-                data.get("purpose")
-            )
+    if doc_type == "nda":
+        file_path, draft_text = generate_nda(
+            call_llm, user, startup,
+            data.get("other_party"),
+            data.get("purpose"),
+            preview=True
+        )
 
-        elif doc_type == "pitch_deck":
-            file_path = generate_pitch_deck(call_llm, user, startup)
+    elif doc_type == "mou":
+        file_path, draft_text = generate_mou(
+            call_llm, user, startup,
+            data.get("partner_name"),
+            data.get("purpose"),
+            preview=True
+        )
 
-        else:
-            return jsonify({"error": "Invalid document type"}), 400
+    elif doc_type == "rti":
+        file_path, draft_text = generate_rti(
+            call_llm, user, startup,
+            data.get("authority"),
+            data.get("subject"),
+            data.get("purpose"),
+            preview=True
+        )
 
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(file_path)
+    elif doc_type == "pitch_deck":
+        file_path, draft_text = generate_pitch_deck(
+            call_llm, startup,
+            preview=True
+        )
 
-        return send_file(file_path, as_attachment=True)
+    else:
+        return jsonify({"error": "Invalid document type"}), 400
 
-    except Exception as e:
-        logger.exception("Document generation failed")
-        return jsonify({"error": str(e)}), 500
-
+    return jsonify({
+        "draft": draft_text,
+        "file_path": file_path
+    })
 @app.route("/documents.html")
 def documents_html_alias():
     return render_template("documents.html")
+
+
+EXPORT_DIR = os.path.join(BASE_DIR, "generated_docs")
+os.makedirs(EXPORT_DIR, exist_ok=True)
+
+
+@app.route("/api/documents/export", methods=["POST"])
+def export_document():
+
+    data = request.get_json()
+    text = data.get("text")
+    format_type = data.get("format","docx")
+
+    if not text:
+        return jsonify({"error":"No text provided"}),400
+
+    file_name = f"Edited_Draft.{format_type}"
+    file_path = os.path.join(EXPORT_DIR, file_name)
+
+    # ---------- DOCX ----------
+    if format_type == "docx":
+
+        doc = Document()
+        for line in text.split("\n"):
+            doc.add_paragraph(line)
+
+        doc.save(file_path)
+
+    # ---------- PDF ----------
+    elif format_type == "pdf":
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+
+        for line in text.split("\n"):
+            pdf.multi_cell(0,8,line)
+
+        pdf.output(file_path)
+
+    else:
+        return jsonify({"error":"Invalid format"}),400
+
+    return jsonify({
+        "file_url": f"/download/{file_name}"
+    })
+@app.route("/download/<filename>")
+def download_file(filename):
+    return send_from_directory(
+        "generated_docs",
+        filename,
+        as_attachment=True
+    )
 @app.route("/debug/sample")
 def sample_row():
     rag_cur.execute("""
@@ -733,6 +801,107 @@ def sample_row():
     """)
     rows = rag_cur.fetchall()
     return jsonify(rows)
+
+@app.route("/api/startup/predict", methods=["POST"])
+def startup_predict():
+
+    if not startup_model:
+        return jsonify({"error": "Model not loaded"}), 500
+
+    data = request.get_json() or {}
+
+    try:
+        age = float(data.get("age_startup_year", 0))
+        funding = float(data.get("funding_total_usd", 0))
+        rounds = float(data.get("funding_rounds", 0))
+        milestones = float(data.get("milestones", 0))
+        participants = float(data.get("avg_participants", 0))
+        relationships = float(data.get("relationships", 0))
+        category = data.get("category", "other")
+
+        has_VC = int(data.get("has_VC", 0))
+        has_angel = int(data.get("has_angel", 0))
+        has_Seed = int(data.get("has_Seed", 0))
+
+        # ---- Tier Engineering ----
+        if relationships <= 5:
+            tier = 4
+        elif relationships <= 10:
+            tier = 3
+        elif relationships <= 16:
+            tier = 2
+        else:
+            tier = 1
+
+        # ---- Category Encoding ----
+        category_flags = {
+    "is_software": 1 if category == "software" else 0,
+    "is_web": 1 if category == "web" else 0,
+    "is_mobile": 1 if category == "mobile" else 0,
+    "is_enterprise": 1 if category == "enterprise" else 0,
+    "is_advertising": 1 if category == "advertising" else 0,
+    "is_gamesvideo": 1 if category == "gamesvideo" else 0,
+    "is_ecommerce": 1 if category == "ecommerce" else 0,
+    "is_biotech": 1 if category == "biotech" else 0,
+    "is_consulting": 1 if category == "consulting" else 0,
+    "is_othercategory": 1 if category == "other" else 0
+}
+
+
+        # ---- Feature Dictionary ----
+        features_dict = {
+            'age_first_funding_year': 0,
+            'age_last_funding_year': 0,
+            'age_first_milestone_year': 0,
+            'age_last_milestone_year': 0,
+            'funding_rounds': rounds,
+            'funding_total_usd': funding,
+            'milestones': milestones,
+
+            'is_CA': 0,
+            'is_NY': 0,
+            'is_MA': 0,
+            'is_TX': 0,
+            'is_otherstate': 1,
+
+            **category_flags,
+
+            'has_VC': has_VC,
+            'has_angel': has_angel,
+            'has_roundA': 0,
+            'has_roundB': 0,
+            'has_roundC': 0,
+            'has_roundD': 0,
+
+            'avg_participants': participants,
+            'is_top500': 0,
+            'has_RoundABCD': 0,
+            'has_Investor': 0,
+            'has_Seed': has_Seed,
+            'invalid_startup': 0,
+
+            'age_startup_year': age,
+            'tier_relationships': tier
+        }
+
+        features_df = pd.DataFrame([features_dict])
+
+        prediction = startup_model.predict(features_df)[0]
+        probability = startup_model.predict_proba(features_df)[0][1]
+
+        return jsonify({
+            "prediction": int(prediction),
+            "success_probability": round(float(probability) * 100, 2),
+            "verdict": "Likely to Succeed 🚀" if prediction == 1 else "Likely to Fail ⚠️"
+        })
+
+    except Exception as e:
+        logger.exception("Prediction error")
+        return jsonify({"error": str(e)}), 500
+@app.route("/predictor")
+@app.route("/predictor.html")
+def predictor_page():
+    return render_template("predictor.html")
 
 
 
